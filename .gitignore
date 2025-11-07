@@ -1,0 +1,45 @@
+# === Node.js ===
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+package-lock.json
+.env
+.env.*
+.DS_Store
+
+# === Logs ===
+logs/
+*.log
+*.log.*
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# === Build outputs ===
+dist/
+build/
+coverage/
+.cache/
+.tmp/
+out/
+.next/
+.nuxt/
+.svelte-kit/
+.vscode-test/
+
+# === JetBrains / WebStorm ===
+.idea/
+*.iml
+
+# === OS files ===
+Thumbs.db
+Desktop.ini
+
+# === Optional: backups or local stuff ===
+*.local
+*.bak
+*.swp
+*.swo
