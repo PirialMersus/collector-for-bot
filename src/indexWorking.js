@@ -689,7 +689,7 @@ async function fetchTotalsNow() {
         const total3Now  = totalCap - btcCap - ethCap
         const total2Prev = totalPrev - btcPrev
         const total3Prev = totalPrev - btcPrev - ethPrev
-        const pct = (now,pr) => Number.isFinite(now)&&Number.isFinite(pr)&&pr!== 0 ? ((now-pr)/pr)*100 : null
+        const pct = (now,pr) => Number.isFinite(now)&&Number.isFinite(pr)&&pr!==0 ? ((now-pr)/pr)*100 : null
         const d1 = pct(totalCap,  totalPrev)
         const d2 = pct(total2Now, total2Prev)
         const d3 = pct(total3Now, total3Prev)
@@ -765,8 +765,7 @@ async function buildCapTopLeaderboard() {
                 const cvdVal = Number.isFinite(cvd?.cvd) ? Number(cvd.cvd) : null
                 const cvdUsd = (Number.isFinite(cvdVal) && Number.isFinite(price)) ? Number((cvdVal * price).toFixed(2)) : null
                 const sortKey = (Math.abs(oiPct || 0) * weightPct) + (Math.abs(cvdUsd || 0) * weightUsd)
-                const v = verdictBy(oiPct, cvdVal)
-                results.push({ sym: asset, oiPct, cvdUsd, price: Number.isFinite(price) ? Number(price) : null, sortKey, verdictEmoji: v.emoji, verdictText: v.text })
+                results.push({ sym: asset, oiPct, cvdUsd, price: Number.isFinite(price) ? Number(price) : null, sortKey })
                 scannedOk++
             } catch { skipped++ }
         })()
@@ -795,10 +794,8 @@ async function buildCapTopLeaderboard() {
         const sOi  = Number.isFinite(r.oiPct)  ? `${r.oiPct.toFixed(2)}%` : '—'
         const sCvd = Number.isFinite(r.cvdUsd) ? humanUsd(r.cvdUsd)       : '—'
         const p    = Number.isFinite(r.price)  ? r.price                  : null
-        console.log(`${i+1}. ${r.sym}: ${r.verdictEmoji || '⚪️'} oi=${sOi} cvd=${sCvd}${p!=null?` price=${p}`:''} verdict="${r.verdictText || ''}"`)
+        console.log(`${i+1}. ${r.sym}: oi=${sOi} cvd=${sCvd}${p!=null?` price=${p}`:''}`)
     })
-    const dist = absTop10.reduce((a,x)=>{ const k = x.verdictEmoji || 'null'; a[k]=(a[k]||0)+1; return a; },{})
-    console.log('[capTop] emojis_dist:', dist, 'window=', windowLabel)
     return { windowLabel, absTop10 }
 }
 
@@ -812,19 +809,8 @@ async function buildAndPersist() {
         const db = client.db(DB_NAME)
         try { await db.collection(COLLECTION).createIndex({ expireAt: 1 }, { expireAfterSeconds: 0 }) } catch {}
         const { snapshots, oiCvd } = await buildSnapshots().catch(() => ({ snapshots: {}, oiCvd: {} }))
-        if (oiCvd && (oiCvd.BTC || oiCvd.ETH)) {
-            console.log('[OI/CVD DEBUG] at:', new Date().toISOString())
-            if (oiCvd.BTC) console.log('[OI/CVD DEBUG] oiCvd.BTC:', JSON.stringify(oiCvd.BTC))
-            if (oiCvd.ETH) console.log('[OI/CVD DEBUG] oiCvd.ETH:', JSON.stringify(oiCvd.ETH))
-        }
         let capTop = null
         try { capTop = await buildCapTopLeaderboard() } catch (e) { console.warn('[capTop] failed:', e?.message || e) }
-        if (capTop && Array.isArray(capTop.absTop10)) {
-            const dist = capTop.absTop10.reduce((a,x)=>{ const k = x.verdictEmoji || 'null'; a[k]=(a[k]||0)+1; return a; },{})
-            console.log('[OI/CVD DEBUG] leadersTop.window:', capTop.windowLabel)
-            console.log('[OI/CVD DEBUG] leadersTop.items.length:', capTop.absTop10.length)
-            console.log('[OI/CVD DEBUG] leadersTop.emojis:', dist)
-        }
         const now = Date.now()
         const expireAt = new Date(now + 24 * 3600 * 1000)
         const meta = { stale: {} }
