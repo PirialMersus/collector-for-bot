@@ -2,6 +2,7 @@
 import 'dotenv/config'
 import axios from 'axios'
 import { MongoClient } from 'mongodb'
+import path from 'path'
 
 const MONGO_URI = process.env.MONGO_URI
 const DB_NAME = process.env.DB_NAME || 'crypto_alert_dev'
@@ -806,7 +807,18 @@ async function buildAndPersist() {
     if (!MONGO_URI) { console.error('MONGO_URI required'); process.exit(1) }
     const client = new MongoClient(MONGO_URI)
     const started = Date.now()
-    console.log('[collector] START', new Date(started).toISOString(), { DB_NAME, COLLECTION, OI_CVD_PERIOD, OI_CVD_LIMIT, CAP_TOP_SCAN_MAX, CAP_TOP_CONCURRENCY })
+    console.log(
+      '[collector] START',
+      new Date(started).toISOString(),
+      JSON.stringify({
+          pid: process.pid,
+          node: process.version,
+          cwd: process.cwd(),
+          script: path.resolve(process.argv[1] || 'src/index.js'),
+          DB_NAME, COLLECTION, SYMBOLS, OI_CVD_PERIOD, OI_CVD_LIMIT,
+          CAP_TOP_SCAN_MAX, CAP_TOP_CONCURRENCY
+      })
+    )
     try {
         await client.connect()
         const db = client.db(DB_NAME)
@@ -825,6 +837,17 @@ async function buildAndPersist() {
             console.log('[OI/CVD DEBUG] leadersTop.items.length:', capTop.absTop10.length)
             console.log('[OI/CVD DEBUG] leadersTop.emojis:', dist)
         }
+        console.log(
+          '[collector] SNAPSHOT_READY',
+          JSON.stringify({
+              atIso: new Date().toISOString(),
+              symbols: Object.keys(snapshots || {}).length,
+              hasOiCvdBTC: Boolean(oiCvd?.BTC),
+              hasOiCvdETH: Boolean(oiCvd?.ETH),
+              leadersWindow: capTop?.windowLabel || null,
+              leadersCount: Array.isArray(capTop?.absTop10) ? capTop.absTop10.length : 0
+          })
+        )
         const now = Date.now()
         const expireAt = new Date(now + 24 * 3600 * 1000)
         const meta = { stale: {} }
